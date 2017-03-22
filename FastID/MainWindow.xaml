@@ -1,0 +1,48 @@
+﻿<Window x:Class="FastID.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="测量" Height="600" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="80"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="100"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal" Grid.Row="1">
+            <Button Name="btnConfig" Click="btnConfig_Click"  ToolTip="配置.">
+                <StackPanel Orientation="Vertical" >
+                    <Image Source="/Images/config.png"  Height="55"/>
+                    <TextBlock FontSize="16" TextAlignment="Center" Margin="3,0,0,0">配置</TextBlock>
+                </StackPanel>
+            </Button>
+            <Button Name="btnSelect" Click="btnSelect_Click"  ToolTip="选择.">
+                <StackPanel Orientation="Vertical" >
+                    <Image Source="/Images/selection.png"  Height="55"/>
+                    <TextBlock FontSize="16" TextAlignment="Center" Margin="3,0,0,0">选择</TextBlock>
+                </StackPanel>
+            </Button>
+            <StackPanel>
+                <Label FontSize="16">当前配置：</Label>
+                <TextBlock Name="txtCurrentConfig"></TextBlock>
+            </StackPanel>
+        </StackPanel>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel  Name="plateContainer">
+                
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <TextBox Name="txtInfo"></TextBox>
+            <Button Name="btnOk" Grid.Column="1" Margin="80,50,0,0" Content="关闭"></Button>
+        </Grid>
+    </Grid>
+</Window>

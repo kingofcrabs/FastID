@@ -1,0 +1,127 @@
+﻿<Window x:Class="FastID.LayoutDef"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="测试定义" Height="400" Width="600">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="3*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="0.5*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid>
+            <StackPanel>
+                <Label>板位定义：</Label>
+                <Label>左上板位置：</Label>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                    <Label>X:</Label>
+                    <TextBox Name="txtTopLeftPlateX" Text="0" Width="50"></TextBox>
+                    <Label>Y:</Label>
+                    <TextBox Name="txtTopLeftPlateY" Text="0" Width="50"></TextBox>
+                </StackPanel>
+                <Label>右下板位置：</Label>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                    <Label>X:</Label>
+                    <TextBox  Name="txtBottomRightPlateX" Text="0" Width="50"></TextBox>
+                    <Label>Y:</Label>
+                    <TextBox  Name="txtBottomRightPlateY" Text="0" Width="50"></TextBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                    <Label>X方向数量:</Label>
+                    <TextBox Name="txtXPlateCnt" Width="50" Text="5" Margin="22,0,0,0"></TextBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                    <Label>Y方向数量:</Label>
+                    <TextBox Name="txtYPlateCnt" Width="50"  Text="1" Margin="22,0,0,0"></TextBox>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Column="1">
+            <StackPanel>
+                <Label>LED位定义：</Label>
+                <Label>左上LED位置：</Label>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                    <Label>X:</Label>
+                    <TextBox Name="txtTopLeftLEDX" Text="0" Width="50"></TextBox>
+                    <Label>Y:</Label>
+                    <TextBox Name="txtTopLeftLEDY" Text="0" Width="50"></TextBox>
+                </StackPanel>
+                <Label>右下LED位置：</Label>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                    <Label>X:</Label>
+                    <TextBox  Name="txtBottomRightLEDX" Text="0"  Width="50"></TextBox>
+                    <Label>Y:</Label>
+                    <TextBox  Name="txtBottomRightLEDY" Text="0"  Width="50"></TextBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                    <Label>X方向数量:</Label>
+                    <TextBox Name="txtXLEDCnt" Width="50" Text="5" Margin="22,0,0,0"></TextBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                    <Label>Y方向数量:</Label>
+                    <TextBox Name="txtYLEDCnt" Width="50" Text="5" Margin="22,0,0,0"></TextBox>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Column="2">
+            <StackPanel>
+                <Label>LAB定义：</Label>
+                <StackPanel Orientation="Horizontal">
+                    <Label>L:</Label>
+                    <TextBox Width="50" Text="50" Name="txtL"></TextBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label>A:</Label>
+                    <TextBox Width="50" Text="50" Name="txtA"></TextBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label>B:</Label>
+                    <TextBox Width="50" Text="50" Name="txtB"></TextBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label>Delta:</Label>
+                    <TextBox Width="50" Text="10" Name="txtDelta"></TextBox>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Column="3">
+            <StackPanel>
+                <Label>参考点定义：</Label>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                    <Label>X:</Label>
+                    <TextBox Name="txtRefX" Text="10" Width="50"></TextBox>
+                    <Label>Y:</Label>
+                    <TextBox Name="txtRefY" Text="10" Width="50"></TextBox>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+        <!--<Grid Grid.Row="1" Grid.ColumnSpan="2">
+            
+        </Grid>-->
+        <Grid Grid.Row="1" Grid.ColumnSpan="4">
+            <StackPanel>
+                <Label>信息：</Label>
+                <TextBox Name="txtInfo" Height="52"></TextBox>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="2"  Grid.Column="0" Grid.ColumnSpan="2">
+            <StackPanel Orientation="Horizontal">
+                <Label Margin="0,5">测试名：</Label>
+                <TextBox Margin="0,5" Name="txtRecipeName" Text="Default" Width="100"></TextBox>
+            </StackPanel>
+            
+            
+        </Grid>
+        <Grid Grid.Row="2"  Grid.Column="3">
+            <Button Content="打开" Click="btnOpen_Click" Name="btnOpen" Width="50" Margin="45,5,50,5"></Button>
+            <Button Content="确认" Click="btnOk_Click" Name="btnOk" Margin="100,5,0,5"></Button>
+        </Grid>
+    </Grid>
+    
+</Window>
