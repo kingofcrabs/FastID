@@ -120,7 +120,7 @@
         </Grid>
         <Grid Grid.Row="2"  Grid.Column="3">
             <Button Content="打开" Click="btnOpen_Click" Name="btnOpen" Width="50" Margin="45,5,50,5"></Button>
-            <Button Content="确认" Click="btnOk_Click" Name="btnOk" Margin="100,5,0,5"></Button>
+            <Button Content="保存" Click="btnSave_Click" Name="btnSave" Margin="100,5,0,5"></Button>
         </Grid>
     </Grid>
     

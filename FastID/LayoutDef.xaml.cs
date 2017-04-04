@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,21 +25,18 @@ namespace FastID
         public LayoutDef()
         {
             InitializeComponent();
+            this.Loaded += LayoutDef_Loaded;
         }
 
-        private void btnOk_Click(object sender, RoutedEventArgs e)
+        void LayoutDef_Loaded(object sender, RoutedEventArgs e)
         {
-            try
+            Recipe recipe = new Recipe();
+            string sFile = Helper.GetConfigFolder() + "default.xml";
+            if(File.Exists(sFile))
             {
-                SaveSettings();
+                SerializeHelper.LoadSettings(ref recipe, sFile);
+                InitUI(recipe, sFile);
             }
-            catch(Exception ex)
-            {
-                txtInfo.Text = ex.Message;
-                txtInfo.Foreground = Brushes.Red;
-                return;
-            }
-            txtInfo.Text = "保存成功！";
         }
 
         private void SaveSettings()
@@ -46,12 +44,12 @@ namespace FastID
             double a = GetDouble(txtA.Text,"A");
             double l = GetDouble(txtL.Text, "L");
             double b = GetDouble(txtB.Text, "B");
-            double delta = GetDouble(txtA.Text, "Delta");
+            double delta = GetDouble(txtDelta.Text, "Delta");
             LABDelta labDelta = new LABDelta(l, a, b, delta);
 
             double refX = GetDouble(txtRefX.Text, "RefX");
             double refY = GetDouble(txtRefY.Text, "RefY");
-            Position refPoint = new Position(refX,refY);
+            Point refPoint = new Point(refX,refY);
 
             //layout info 
             int plateXCnt = GetInt(txtXPlateCnt.Text, "X方向板子数量");
@@ -60,9 +58,8 @@ namespace FastID
             double plateTopLeftY = GetDouble(txtTopLeftPlateY.Text, "板子Y起始位");
             double plateBottomRightX = GetDouble(txtBottomRightPlateX.Text, "板子X结束位");
             double plateBottomRightY = GetDouble(txtBottomRightPlateY.Text, "板子Y结束位");
-            Position firstPlate = new Position(plateTopLeftX, plateTopLeftY);
-            Position lastPlate = new Position(plateBottomRightX, plateBottomRightY);
-            //LayoutInfo layoutInfo = new LayoutInfo()
+            Point firstPlate = new Point(plateTopLeftX, plateTopLeftY);
+            Point lastPlate = new Point(plateBottomRightX, plateBottomRightY);
 
             //plateInfo
             int ledXCnt = GetInt(txtXLEDCnt.Text, "X方向LED数量");
@@ -71,8 +68,8 @@ namespace FastID
             double ledTopLeftY = GetDouble(txtTopLeftLEDY.Text, "LED Y起始位");
             double ledBottomRightX = GetDouble(txtBottomRightLEDX.Text, "LED X结束位");
             double ledBottomRightY = GetDouble(txtBottomRightLEDY.Text, "LED Y结束位");
-            Position firstLED = new Position(ledTopLeftX, ledTopLeftY);
-            Position lastLED = new Position(ledBottomRightX, ledBottomRightY);
+            Point firstLED = new Point(ledTopLeftX, ledTopLeftY);
+            Point lastLED = new Point(ledBottomRightX, ledBottomRightY);
             PlateInfo plateInfo = new PlateInfo(firstLED, lastLED, ledXCnt, ledYCnt);
             LayoutInfo layoutInfo = new LayoutInfo(plateInfo, firstPlate, lastPlate,plateXCnt,plateYCnt);
             Recipe recipe = new Recipe(layoutInfo, refPoint, labDelta);
@@ -117,14 +114,12 @@ namespace FastID
             {
                 SetInfo(ex.Message, true);
             }
-            
-            
         }
 
         private void SetInfo(string s, bool isError = false)
         {
             txtInfo.Text = s;
-            txtInfo.Foreground = isError ? Brushes.Red ：Brushes.Black;
+            txtInfo.Foreground = isError ? Brushes.Red : Brushes.Black;
         }
 
         private void InitUI(Recipe recipe,string sFile)
@@ -133,28 +128,43 @@ namespace FastID
             txtL.Text = recipe.labDelta.l.ToString();
             txtB.Text = recipe.labDelta.b.ToString();
             txtDelta.Text = recipe.labDelta.delta.ToString();
-            txtRefX.Text = recipe.refPoint.x.ToString();
-            txtRefY.Text = recipe.refPoint.y.ToString();
+            txtRefX.Text = recipe.refPoint.X.ToString();
+            txtRefY.Text = recipe.refPoint.Y.ToString();
 
             txtXPlateCnt.Text = recipe.layoutInfo.xPlateCount.ToString();
             txtYPlateCnt.Text = recipe.layoutInfo.yPlateCount.ToString();
-            txtTopLeftPlateX.Text = recipe.layoutInfo.topLeft.x.ToString();
-            txtTopLeftPlateY.Text = recipe.layoutInfo.topLeft.y.ToString();
-            txtBottomRightPlateX.Text = recipe.layoutInfo.bottomRight.x.ToString();
-            txtBottomRightPlateY.Text = recipe.layoutInfo.bottomRight.y.ToString();
+            txtTopLeftPlateX.Text = recipe.layoutInfo.topLeft.X.ToString();
+            txtTopLeftPlateY.Text = recipe.layoutInfo.topLeft.Y.ToString();
+            txtBottomRightPlateX.Text = recipe.layoutInfo.bottomRight.X.ToString();
+            txtBottomRightPlateY.Text = recipe.layoutInfo.bottomRight.Y.ToString();
 
        
             //led info
             txtXLEDCnt.Text = recipe.layoutInfo.plateInfo.xLEDCount.ToString();
             txtYLEDCnt.Text = recipe.layoutInfo.plateInfo.yLEDCount.ToString();
-            txtTopLeftLEDX.Text = recipe.layoutInfo.plateInfo.firstLEDPos.x.ToString();
-            txtTopLeftLEDY.Text = recipe.layoutInfo.plateInfo.firstLEDPos.y.ToString();
-            txtBottomRightLEDX.Text = recipe.layoutInfo.plateInfo.lastLEDPos.x.ToString();
-            txtBottomRightLEDY.Text = recipe.layoutInfo.plateInfo.lastLEDPos.y.ToString();
+            txtTopLeftLEDX.Text = recipe.layoutInfo.plateInfo.firstLEDPos.X.ToString();
+            txtTopLeftLEDY.Text = recipe.layoutInfo.plateInfo.firstLEDPos.Y.ToString();
+            txtBottomRightLEDX.Text = recipe.layoutInfo.plateInfo.lastLEDPos.X.ToString();
+            txtBottomRightLEDY.Text = recipe.layoutInfo.plateInfo.lastLEDPos.Y.ToString();
 
             int pos = sFile.LastIndexOf("\\") + 1;
             sFile = sFile.Substring(pos).Replace(".xml","");
             txtRecipeName.Text = sFile;
+        }
+
+        private void btnSave_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                SaveSettings();
+            }
+            catch (Exception ex)
+            {
+                txtInfo.Text = ex.Message;
+                txtInfo.Foreground = Brushes.Red;
+                return;
+            }
+            txtInfo.Text = "保存成功！";
         }
     }
 }

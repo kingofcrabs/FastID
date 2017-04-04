@@ -1,7 +1,11 @@
-﻿using System;
+﻿using FastID.controls;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,39 +24,147 @@ namespace FastID
     /// </summary>
     public partial class MainWindow : Window
     {
+        
+        TestViewer testViewer = null;
+        SimulationViewer simulationViewer = null;
+        Tester tester = new Tester();
+        Thread thread;
+        
+        
+        ObservableCollection<PlateModel> plateModels = new ObservableCollection<PlateModel>();
         public MainWindow()
         {
             InitializeComponent();
             this.Loaded += MainWindow_Loaded;
+            this.SizeChanged += MainWindow_SizeChanged;
+            tester.onLABUpdate += tester_onLABUpdate;
+            tester.onProgressChanged += tester_onProgressChanged;
+            this.Closing += MainWindow_Closing;
+        }
+
+        
+
+        void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (thread != null)
+                thread.Abort();
+        }
+
+        void tester_onLABUpdate(int plateID, int xLEDIndex, int yLEDIndex, LAB val, bool isFirst)
+        {
+            GlobalVars.Instance.plateID_LABInfos[plateID].Add(new PositionInt(xLEDIndex, yLEDIndex), val);
+            
+            this.Dispatcher.BeginInvoke(new Action(()=>UpdateUI(plateID,xLEDIndex,yLEDIndex,isFirst)));  
+        }
+
+        private void UpdateUI(int plateID, int xLED, int yLED, bool isLast)
+        {
+            testViewer.Position_LAB = GlobalVars.Instance.plateID_LABInfos[plateID];
+            int plateIndex = plateID - 1;
+            int ledID = GlobalVars.Instance.PlateInfo.GetLEDID(xLED, yLED);
+            simulationViewer.SetCurrentInfo(plateID, ledID);
+            if (isLast)
+            {
+                plateModels[plateIndex].IsFinished = true;
+                plateModels[plateIndex].IsChecking = false;
+            }
+            if (xLED + yLED == 0) //first
+            {
+                plateModels[plateIndex].IsChecking = true;
+            }
+        }
+   
+        void tester_onProgressChanged(string sMessage)
+        {
+            AddLog(sMessage);
+        }
+
+        void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (testViewer == null)
+                return;
+            testViewer.Resize(e.NewSize);
+            simulationViewer.Resize(e.NewSize);
         }
 
         void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            AddButtons(5);
-        }
-
-        private void AddButtons(int cnt)
-        {
-            for(int i = 0; i< cnt; i++)
+            string defaultFile = Helper.GetConfigFolder() + "default.xml";
+            if(File.Exists(defaultFile))
             {
-                PlateButton plateButton = new PlateButton(i+1);
-                plateButton.Height = 200;
-                plateButton.Click += plateButton_Click;
-                plateContainer.Children.Add(plateButton);
+                GlobalVars.Instance.Recipe = SerializeHelper.Load<Recipe>(defaultFile) as Recipe;
+                txtCurrentConfig.Text = "default";
+                InitialUI();
             }
+            //try
+            //{
+            //    MotorController.Instance.Init();
+            //}
+            //catch(Exception ex)
+            //{
+            //    SetInfo(ex.Message);
+            //}
             
         }
 
-        void plateButton_Click(object sender, RoutedEventArgs e)
+        private void SetInfo(string s, bool ok = false)
         {
-            PlateButton btn = (PlateButton)sender;
-            
+            Brush brush = ok ? Brushes.Black : Brushes.Red;
+            txtInfo.Foreground = brush;
+            txtInfo.Text = s;
+        }
+
+
+        void AddLog(string s)
+        {
+            txtLog.Dispatcher.BeginInvoke((Action)(() => txtLog.Text += s + "\r\n"));
+        }
+
+        private void btnGo_Click(object sender, RoutedEventArgs e)
+        {
+            thread = new Thread(tester.Go);
+            thread.Start();
         }
 
         private void btnSelect_Click(object sender, RoutedEventArgs e)
         {
-
+            SelectionWindow selectionWindow = new SelectionWindow();
+            selectionWindow.ShowDialog();
+            txtCurrentConfig.Text = SelectionWindow.curConfigName;
+            
+            string sFile = Helper.GetConfigFolder() + SelectionWindow.curConfigName + ".xml";
+            GlobalVars.Instance.Recipe = SerializeHelper.Load<Recipe>(sFile) as Recipe;
+            InitialUI();
         }
+
+        private void InitialUI()
+        {
+            InitialListBox();
+            simulationViewer = new SimulationViewer(viewerContainer.ActualWidth, viewerContainer.ActualHeight);
+
+            testViewer = new TestViewer(viewerContainer.ActualWidth, viewerContainer.ActualHeight);
+            viewerContainer.Children.Clear();
+            simuationContainer.Children.Clear();
+           
+            viewerContainer.Children.Add(testViewer);
+            simuationContainer.Children.Add(simulationViewer);
+        }
+
+        private void InitialListBox()
+        {
+            int plateCnt = GlobalVars.Instance.PlateCnt;
+            GlobalVars.Instance.plateID_LABInfos.Clear();
+            
+            lstPlates.ItemsSource = plateModels;
+            plateModels.Clear();
+            for (int i = 0; i < plateCnt; i++)
+            {
+                plateModels.Add(new PlateModel((i + 1).ToString()));
+                GlobalVars.Instance.plateID_LABInfos.Add(i + 1, new Dictionary<PositionInt, LAB>());
+            }
+        }
+
+
 
         private void btnConfig_Click(object sender, RoutedEventArgs e)
         {
@@ -60,6 +172,36 @@ namespace FastID
             layoutDef.ShowDialog();
         }
 
-       
+        private void lstPlates_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if(lstPlates.SelectedIndex == -1)
+                return;
+            int selIndex = lstPlates.SelectedIndex;
+            testViewer.Position_LAB =  GlobalVars.Instance.plateID_LABInfos[selIndex + 1];
+
+        }
+
+        private void btnOk_Click(object sender, RoutedEventArgs e)
+        {
+            string sFile = Helper.GetOutputFolder() + DateTime.Now.ToString("yyMMddHHmmss") + ".csv";
+            ResultWriter.Save(sFile);
+            this.Close();
+        }
+
+        private void btnAbort_Click(object sender, RoutedEventArgs e)
+        {
+            tester.Abort();
+        }
+
+        private void CommandHelp_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            AboutBox aboutBox = new AboutBox();
+            aboutBox.ShowDialog();
+        }
+
+        private void CommandHelp_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
     }
 }

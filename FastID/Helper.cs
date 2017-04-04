@@ -21,7 +21,17 @@ namespace FastID
         {
             string s = GetExeParentFolder();
             string folder = s + "Config\\";
-            if (Directory.Exists(folder))
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+            return folder;
+        }
+
+
+        static public string GetOutputFolder()
+        {
+            string s = GetExeParentFolder();
+            string folder = s + "Output\\";
+            if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
             return folder;
         }
@@ -30,6 +40,18 @@ namespace FastID
         {
             string s = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             return s + "\\";
+        }
+
+        internal static double GetDelta(LAB lab,ref bool isOk)
+        {
+            LABDelta labDelta = GlobalVars.Instance.Recipe.labDelta;
+            double l = lab.l - labDelta.l;
+            double a = lab.a - labDelta.a;
+            double b = lab.b - labDelta.b;
+            
+            double delta = Math.Sqrt(l * l + a * a + b * b);
+            isOk = delta < labDelta.delta;
+            return delta;
         }
     }
 

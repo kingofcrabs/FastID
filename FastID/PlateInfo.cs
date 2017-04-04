@@ -3,22 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace FastID
 {
     [Serializable]
     public class PlateInfo
     {
-        public Position firstLEDPos;
-        public Position lastLEDPos;
+        public Point firstLEDPos;
+        public Point lastLEDPos;
         public int xLEDCount;
         public int yLEDCount;
-        public PlateInfo(Position first, Position last, int x, int y)
+        public PlateInfo(Point first, Point last, int x, int y)
         {
             firstLEDPos = first;
             lastLEDPos = last;
             xLEDCount = x;
             yLEDCount = y;
+        }
+
+        public int GetLEDID(int colIndex, int rowIndex)
+        {
+            return xLEDCount * rowIndex + colIndex + 1;
         }
 
         public PlateInfo()
@@ -31,9 +37,10 @@ namespace FastID
     public class Recipe
     {
         public LayoutInfo layoutInfo;
-        public Position refPoint;
+        public Point refPoint;
         public LABDelta labDelta;
-        public Recipe(LayoutInfo layoutInfo, Position refPoint, LABDelta labDelta)
+        private string p;
+        public Recipe(LayoutInfo layoutInfo, Point refPoint, LABDelta labDelta)
         {
             this.layoutInfo = layoutInfo;
             this.refPoint = refPoint;
@@ -43,6 +50,8 @@ namespace FastID
         {
 
         }
+
+       
     }
 
     [Serializable]
@@ -50,15 +59,15 @@ namespace FastID
     {
 
         public PlateInfo plateInfo;
-        public Position topLeft;
-        public Position bottomRight;
+        public Point topLeft;
+        public Point bottomRight;
         public int xPlateCount;
         public int yPlateCount;
         public LayoutInfo()
         {
 
         }
-        public LayoutInfo(PlateInfo pInfo, Position tl, Position br, int x, int y)
+        public LayoutInfo(PlateInfo pInfo, Point tl, Point br, int x, int y)
         {
             plateInfo = pInfo;
             topLeft = tl;
@@ -68,21 +77,19 @@ namespace FastID
         }
     }
 
-    [Serializable]
-    public class Position
+    public struct PositionInt
     {
-        public double x;
-        public double y;
-        public Position(double x, double y)
+        public int x;
+        public int y;
+        public PositionInt(int xIndex, int yIndex)
         {
-            this.x = x;
-            this.y = y;
-        }
-        public Position()
-        {
-
+            this.x = xIndex;
+            this.y = yIndex;
         }
     }
+
+
+
 
     [Serializable]
     public struct LABDelta
@@ -97,6 +104,21 @@ namespace FastID
             this.a = a;
             this.b = b;
             this.delta = delta;
+        }
+    }
+
+
+    public struct LAB
+    {
+        public double l;
+        public double a;
+        public double b;
+        public LAB(double l, double a, double b)
+        {
+            this.l = l;
+            this.a = a;
+            this.b = b;
+            
         }
     }
 
