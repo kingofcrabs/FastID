@@ -1,21 +1,12 @@
-﻿using FastID.controls;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace FastID
 {
@@ -83,8 +74,11 @@ namespace FastID
         {
             if (testViewer == null)
                 return;
-            testViewer.Resize(e.NewSize);
-            simulationViewer.Resize(e.NewSize);
+            Size testViewerSize = new Size(viewerContainer.ActualWidth, viewerContainer.ActualHeight);
+            testViewer.Resize(testViewerSize);
+
+            Size simuationSize = new Size(simuationContainer.ActualWidth, simuationContainer.ActualHeight);
+            simulationViewer.Resize(simuationSize);
         }
 
         void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -133,7 +127,10 @@ namespace FastID
             txtCurrentConfig.Text = SelectionWindow.curConfigName;
             
             string sFile = Helper.GetConfigFolder() + SelectionWindow.curConfigName + ".xml";
-            GlobalVars.Instance.Recipe = SerializeHelper.Load<Recipe>(sFile) as Recipe;
+            if(File.Exists(sFile))
+            {
+                GlobalVars.Instance.Recipe = SerializeHelper.Load<Recipe>(sFile) as Recipe;
+            }
             InitialUI();
         }
 

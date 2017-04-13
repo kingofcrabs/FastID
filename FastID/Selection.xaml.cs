@@ -39,6 +39,7 @@ namespace FastID
                 configNames.Add(fileInfo.Name.Replace(".xml",""));
             }
             lstConfig.ItemsSource = configNames;
+            lstConfig.SelectedIndex = 0;
         }
 
         private void btnConfirm_Click(object sender, RoutedEventArgs e)

@@ -1,4 +1,5 @@
 ﻿using FastID.controls;
+using NationalInstruments.VisaNS;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,13 +11,14 @@ using System.Windows;
 
 namespace FastID
 {
-    class Tester
+    class Tester : IDisposable
     {
         public delegate void ProgressChanged(string sMessage);
         public delegate void LABUpdate(int plateID, int xLED, int yLED, LAB val, bool isLast);
         public event ProgressChanged onProgressChanged;
         public event LABUpdate onLABUpdate;
-        
+        UsbSession admesyusbSession = null;
+
         public bool Finished { get; set; }
         bool isAbort = false;
         void Move2RefPoint()
@@ -27,15 +29,59 @@ namespace FastID
 
         LAB ReadLAB()
         {
-            Random rnd = new Random((int)DateTime.Now.Ticks);
-            double l = 13 + rnd.Next(40000) / 10000.0;
-            double a = 14 + rnd.Next(40000) / 10000.0;
-            double b = 15 + rnd.Next(40000) / 10000.0;
-            return new LAB(l, a, b);
+            double x, y, z;
+            x = y = z = 0;
+            GetXYZ(admesyusbSession, ref x, ref y, ref z);
+            double xReal, yReal, zReal;
+            xReal = yReal = zReal = 0;
+            GetXYZ(admesyusbSession, ref xReal, ref yReal, ref zReal);
+            var Lab = XYZToLab(x, y, z, xReal, yReal, zReal);
+            Debug.WriteLine("L: {0} a:{1} b{2}", Lab.l, Lab.a, Lab.b);
+            return Lab;
+        }
+
+        private LAB XYZToLab(double x, double y, double z, double xReal, double yReal, double zReal)
+        {
+            //D65 95.0182 100,108.7485
+            double[] D65Vals = new double[] { 0.950182, 1, 1.087485 };
+            double[] testVals = new double[] { 1, 1, 1 };
+            double[] adjustRatios = testVals;
+            double e = 216 / 24389.0;
+            double k = 24389.0 / 27;
+            double Xr = xReal / x * adjustRatios[0];
+            double Yr = yReal / y * adjustRatios[1];
+            double Zr = zReal / z * adjustRatios[2];
+            double fx = GetFVal(Xr, e, k);
+            double fy = GetFVal(Yr, e, k);
+            double fz = GetFVal(Zr, e, k);
+            double L = 116 * fx - 16;
+            double a = 500 * (fx - fy);
+            double b = 200 * (fy - fz);
+            return new LAB(L, a, b);
+
+        }
+
+        void GetXYZ(UsbSession admesyusbSession, ref double x, ref double y, ref double z)
+        {
+            admesyusbSession.Write(":meas:xyz");
+            string sValues = admesyusbSession.ReadString();
+            string[] xyzValues = sValues.Split(new Char[] { ',' }, 5);
+            x = double.Parse(xyzValues[0]);
+            y = double.Parse(xyzValues[1]);
+            z = double.Parse(xyzValues[2]);
+
+        }
+
+        private double GetFVal(double v, double e, double k)
+        {
+            double fVal = v > e ? Math.Pow(v, 1 / 3.0) : (k * v + 16) / 116;
+            return fVal;
         }
 
         public void Go()
         {
+            MotorController.Instance.MoveHome();
+            InitLABReader();
             Finished = false;
             isAbort = false;
             var recipe = GlobalVars.Instance.Recipe;
@@ -68,6 +114,40 @@ namespace FastID
                 
             }
             Finished = true;
+        }
+
+        private void InitLABReader()
+        {
+            
+            string[] resources;
+            Boolean DeviceNotAvailable = true;
+
+            /* Find all resources */
+            resources = ResourceManager.GetLocalManager().FindResources("?*");
+            /* find if an attached device is an Admesy device. first found Admesy device is used */
+            foreach (string admesy_device in resources)
+            {
+                if (admesy_device.Contains("0x1781:") || admesy_device.Contains("0x23CF"))
+                {
+                    /* open usb session */
+                    admesyusbSession = (UsbSession)ResourceManager.GetLocalManager().Open(admesy_device);
+                    /* print to let user now wich device is used */
+                    Console.WriteLine("Selected device:");
+                    Console.WriteLine(admesyusbSession.ResourceName);
+                    Console.WriteLine();
+                    /* set DeviceNotAvailable because we have found one */
+                    DeviceNotAvailable = false;
+                    break;
+                }
+            }
+            if (DeviceNotAvailable)
+            {
+                throw new Exception("No Admesy device detected.");
+            }
+
+            admesyusbSession.Write(":configure:white:use 1");
+            admesyusbSession.Write(":set:average 2000");
+          
         }
 
         void NotifyProgressChanged(string sMessage)
@@ -132,7 +212,7 @@ namespace FastID
 
             double x = platePos.X + ledPosInPlate.X;
             double y = platePos.Y + ledPosInPlate.Y;
-            //MotorController.Instance.MoveAbsolute(x, y);
+            MotorController.Instance.MoveAbsolute(x, y);
             
         }
 
@@ -188,6 +268,12 @@ namespace FastID
             isAbort = true;
         }
 
-      
+
+
+        public void Dispose()
+        {
+            if(admesyusbSession != null)
+                admesyusbSession.Dispose();
+        }
     }
 }

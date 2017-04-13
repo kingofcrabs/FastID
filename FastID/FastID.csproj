@@ -37,6 +37,12 @@
     <ApplicationIcon>led.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="NationalInstruments.Common">
+      <HintPath>lib\NationalInstruments.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="NationalInstruments.VisaNS">
+      <HintPath>lib\NationalInstruments.VisaNS.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -67,7 +73,7 @@
     <Compile Include="controls\CARDINFO.cs" />
     <Compile Include="controls\CommonData.cs" />
     <Compile Include="controls\MotorController.cs" />
-    <Compile Include="controls\MPC08DLL.cs" />
+    <Compile Include="controls\MPC08EDLL.cs" />
     <Compile Include="GlobalVars.cs" />
     <Compile Include="Result.cs" />
     <Compile Include="Selection.xaml.cs">

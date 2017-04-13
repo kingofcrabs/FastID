@@ -12,19 +12,8 @@ namespace FastID
     {
         public int CurrentLEDID { get; set; }
         public int CurrentPlateID { get; set; }
-        Size sz;
-        public SimulationViewer(double w, double h)
-        {
-            sz.Width = w;
-            sz.Height = h;
-        }
-
-        internal void Resize(Size newSize)
-        {
-            sz = newSize;
-            InvalidateVisual();
-        }
-
+        
+        
         protected override void OnRender(System.Windows.Media.DrawingContext drawingContext)
         {
             var refPoint = GlobalVars.Instance.Recipe.refPoint;
@@ -32,7 +21,7 @@ namespace FastID
             var w = layoutInfo.bottomRight.X - layoutInfo.topLeft.X;
             var h = layoutInfo.bottomRight.Y - layoutInfo.topLeft.Y;
 
-            var mapX = MapX(refPoint.X);
+            var mapX = MapX(refPoint.X); 
             var mapY = MapY(refPoint.Y);
             Pen redPen = new Pen(Brushes.Red, 1);
             int r = 10;
@@ -43,7 +32,7 @@ namespace FastID
             int colIndex, rowIndex;
             colIndex = rowIndex = 0;
             int plateCnt = layoutInfo.xPlateCount * layoutInfo.yPlateCount;
-
+            
             var plateInfo = layoutInfo.plateInfo;
             int ledCnt = plateInfo.xLEDCount * plateInfo.yLEDCount;
             var ledSize = Tester.GetLEDSize();
@@ -71,25 +60,25 @@ namespace FastID
                         rowIndex,
                         plateInfo.xLEDCount,
                         plateInfo.yLEDCount);
-
+                    
                     double x = platePos.X + ledPosInPlate.X;
                     double y = platePos.Y + ledPosInPlate.Y;
                     bool isCurrent = plateID == CurrentPlateID && ledID == CurrentLEDID;
-                    DrawLEDs(x, y, sz, isCurrent, drawingContext);
+                    DrawLEDs(x, y, sz, isCurrent,drawingContext);
                 }
             }
         }
 
-        private void DrawLEDs(double x, double y, System.Windows.Size sz, bool isCurrent, DrawingContext drawingContext)
+        private void DrawLEDs(double x, double y, System.Windows.Size sz, bool isCurrent ,DrawingContext drawingContext)
         {
             double mapX = MapX(x);
             double mapY = MapY(y);
             double mapW = MapX(sz.Width);
             double mapH = MapY(sz.Height);
-            double startX = mapX - mapW / 2;
-            double startY = mapY - mapH / 2;
+            double startX = mapX - mapW/2;
+            double startY = mapY - mapH/2;
             Brush brush = isCurrent ? Brushes.Red : Brushes.Black;
-            drawingContext.DrawRectangle(brush, new Pen(brush, 1), new Rect(new Point(mapX, mapY), new Size(mapW, mapH)));
+            drawingContext.DrawRectangle(brush, new Pen(brush,1),new Rect(new Point(startX,startY),new Size(mapW,mapH)));
         }
 
         private double MapX(double v)
@@ -98,7 +87,7 @@ namespace FastID
             var layoutInfo = GlobalVars.Instance.Recipe.layoutInfo;
             var w = layoutInfo.bottomRight.X - layoutInfo.topLeft.X;
             var h = layoutInfo.bottomRight.Y - layoutInfo.topLeft.Y;
-            return v / w * sz.Width;
+            return v/ w * this.ActualWidth;
         }
 
         private double MapY(double v)
@@ -107,7 +96,7 @@ namespace FastID
             var layoutInfo = GlobalVars.Instance.Recipe.layoutInfo;
             var w = layoutInfo.bottomRight.X - layoutInfo.topLeft.X;
             var h = layoutInfo.bottomRight.Y - layoutInfo.topLeft.Y;
-            return v / h * sz.Height;
+            return v / h * this.ActualHeight;
         }
 
         private void DrawRefrencePoint(System.Windows.Media.DrawingContext drawingContext)
@@ -117,11 +106,11 @@ namespace FastID
             var w = layoutInfo.bottomRight.X - layoutInfo.topLeft.X;
             var h = layoutInfo.bottomRight.Y - layoutInfo.topLeft.Y;
 
-            var mapX = MapX(refPoint.X);
-            var mapY = MapY(refPoint.Y);
-            Pen redPen = new Pen(Brushes.Red, 1);
+            var mapX = refPoint.X / w * this.ActualWidth;
+            var mapY = refPoint.Y / h * this.ActualHeight;
+            Pen redPen = new Pen(Brushes.Red,1);
             int r = 10;
-            drawingContext.DrawEllipse(null, redPen, new Point(mapX, mapY), r, r);
+            drawingContext.DrawEllipse(null, redPen, new Point(mapX, mapY), r,r);
         }
 
         internal void SetCurrentInfo(int plateID, int ledID)
@@ -130,7 +119,5 @@ namespace FastID
             CurrentLEDID = ledID;
             InvalidateVisual();
         }
-
-     
     }
 }
