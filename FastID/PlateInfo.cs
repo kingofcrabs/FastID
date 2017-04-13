@@ -120,6 +120,15 @@ namespace FastID
             this.b = b;
             
         }
+
+        internal double CalculateDelta()
+        {
+            var labDelta = GlobalVars.Instance.Recipe.labDelta;
+            double ll = labDelta.l - l;
+            double aa = labDelta.a - a;
+            double bb = labDelta.b - b;
+            return Math.Sqrt(ll * ll + aa * aa + bb * bb);
+        }
     }
 
 }

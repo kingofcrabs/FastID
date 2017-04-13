@@ -20,8 +20,8 @@ namespace FastID
         SimulationViewer simulationViewer = null;
         Tester tester = new Tester();
         Thread thread;
-        
-        
+
+        ObservableCollection<TestResult> testResults = new ObservableCollection<TestResult>();
         ObservableCollection<PlateModel> plateModels = new ObservableCollection<PlateModel>();
         public MainWindow()
         {
@@ -45,14 +45,15 @@ namespace FastID
         {
             GlobalVars.Instance.plateID_LABInfos[plateID].Add(new PositionInt(xLEDIndex, yLEDIndex), val);
             
-            this.Dispatcher.BeginInvoke(new Action(()=>UpdateUI(plateID,xLEDIndex,yLEDIndex,isFirst)));  
+            this.Dispatcher.BeginInvoke(new Action(()=>UpdateUI(plateID,xLEDIndex,yLEDIndex,val ,isFirst)));  
         }
 
-        private void UpdateUI(int plateID, int xLED, int yLED, bool isLast)
+        private void UpdateUI(int plateID, int xLED, int yLED, LAB lab,bool isLast)
         {
             testViewer.Position_LAB = GlobalVars.Instance.plateID_LABInfos[plateID];
             int plateIndex = plateID - 1;
             int ledID = GlobalVars.Instance.PlateInfo.GetLEDID(xLED, yLED);
+            testResults.Add(new TestResult(plateID, ledID, lab));
             simulationViewer.SetCurrentInfo(plateID, ledID);
             if (isLast)
             {
@@ -84,6 +85,7 @@ namespace FastID
         void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             string defaultFile = Helper.GetConfigFolder() + "default.xml";
+            lstviewResult.ItemsSource = testResults;
             if(File.Exists(defaultFile))
             {
                 GlobalVars.Instance.Recipe = SerializeHelper.Load<Recipe>(defaultFile) as Recipe;

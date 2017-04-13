@@ -81,6 +81,7 @@
     </Compile>
     <Compile Include="SimulationView.cs" />
     <Compile Include="Tester.cs" />
+    <Compile Include="TestResult.cs" />
     <Compile Include="TestViewer.cs" />
     <Page Include="LayoutDef.xaml">
       <SubType>Designer</SubType>

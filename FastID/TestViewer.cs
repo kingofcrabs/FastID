@@ -66,7 +66,7 @@ namespace FastID
             if (Position_LAB != null && Position_LAB.ContainsKey(position))
             {
                 var lab = Position_LAB[position];
-                double delta = CalculateDelta(lab);
+                double delta = lab.CalculateDelta();
                 bool bOk = delta < GlobalVars.Instance.Recipe.labDelta.delta;
                 Brush brush = bOk ? Brushes.LightGreen : Brushes.Red;
                 drawingContext.DrawRectangle(brush, new Pen(Brushes.Black, 1), new Rect(new Point(startX, startY), new Size(szUint, szUint)));
@@ -106,14 +106,7 @@ namespace FastID
             drawingContext.DrawText(txt, point);
         }
 
-        private double CalculateDelta(LAB lab)
-        {
-            var labDelta = GlobalVars.Instance.Recipe.labDelta;
-            double l = labDelta.l - lab.l;
-            double a = labDelta.a - lab.a;
-            double b = labDelta.b - lab.b;
-            return Math.Sqrt(l * l + a * a + b * b);
-        }
+      
 
         
         private int GetUint(int xx, int yy)
