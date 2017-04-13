@@ -78,9 +78,28 @@
 
             <TabControl Name="viewerTabs"  Grid.Column="1">
                 <TabItem Header="结果">
-                    <StackPanel  Name="viewerContainer">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"></ColumnDefinition>
+                            <ColumnDefinition Width="*"></ColumnDefinition>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel  Name="viewerContainer">
 
-                    </StackPanel>
+                        </StackPanel>
+                        <ListView Name="lstviewResult" Grid.Column="1" FontFamily="SimSun">
+                            <ListView.View>
+                                <GridView x:Name="gridView1">
+                                    <GridViewColumn Header="板号" Width="50" DisplayMemberBinding="{Binding Path=PlateNo}"></GridViewColumn>
+                                    <GridViewColumn Header="灯号" Width="50" DisplayMemberBinding="{Binding Path=LEDNo}"></GridViewColumn>
+                                    <GridViewColumn Header="L" Width="50" DisplayMemberBinding="{Binding Path=L}"></GridViewColumn>
+                                    <GridViewColumn Header="a" Width="50" DisplayMemberBinding="{Binding Path=a}"></GridViewColumn>
+                                    <GridViewColumn Header="b" Width="50" DisplayMemberBinding="{Binding Path=b}"></GridViewColumn>
+                                    <GridViewColumn Header="e" Width="120" DisplayMemberBinding="{Binding Path=e}"></GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </Grid>
+                   
                 </TabItem>
                 <TabItem Header="模拟">
                     <StackPanel  Name="simuationContainer">

@@ -27,6 +27,8 @@ namespace FastID
             
         }
 
+
+        #region Lab related
         LAB ReadLAB()
         {
             double x, y, z;
@@ -69,6 +71,9 @@ namespace FastID
             x = double.Parse(xyzValues[0]);
             y = double.Parse(xyzValues[1]);
             z = double.Parse(xyzValues[2]);
+            x = 100;
+            y = 90;
+            z = 80;
 
         }
 
@@ -77,6 +82,7 @@ namespace FastID
             double fVal = v > e ? Math.Pow(v, 1 / 3.0) : (k * v + 16) / 116;
             return fVal;
         }
+        #endregion
 
         public void Go()
         {
@@ -108,7 +114,7 @@ namespace FastID
                 }
                 if(isAbort)
                 {
-                    NotifyProgressChanged("Aborted！");
+                    NotifyProgressChanged("Abort！");
                     break;
                 }
                 
@@ -118,7 +124,9 @@ namespace FastID
 
         private void InitLABReader()
         {
-            
+            if (admesyusbSession != null)
+                return;
+
             string[] resources;
             Boolean DeviceNotAvailable = true;
 
