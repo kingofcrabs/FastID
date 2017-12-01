@@ -1,6 +1,8 @@
-﻿using Microsoft.Win32;
+﻿using FastID.controls;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -165,6 +167,61 @@ namespace FastID
                 return;
             }
             txtInfo.Text = "保存成功！";
+        }
+
+        private void btnGetLAB_Click(object sender, RoutedEventArgs e)
+        {
+            double x = double.Parse(txtRefX.Text);
+            double y = double.Parse(txtRefY.Text);
+            var lab = Tester.Instance.GetStandardLab(x,y);
+            txtL.Text = lab.l.ToString();
+            txtA.Text = lab.a.ToString();
+            txtB.Text = lab.b.ToString();
+        }
+
+        private void btnGetWhiteBoardXYZ_Click(object sender, RoutedEventArgs e)
+        {
+            double x = double.Parse(txtWhiteBoardX.Text);
+            double y = double.Parse(txtWhiteBoardY.Text);
+            try
+            {
+                var xyz = Tester.Instance.GetWhiteBoardXYZ(x, y);
+                UpdateAppConfig("x", xyz.x.ToString());
+                UpdateAppConfig("y", xyz.y.ToString());
+                UpdateAppConfig("z", xyz.z.ToString());
+                txtInfo.Text = string.Format("xyz:{0},{1},{2}", xyz.x, xyz.y, xyz.z);
+            }
+            catch(Exception ex)
+            {
+                IOController.Instance.RedLightOn();
+                SetInfo(ex.Message, true);
+            }
+            
+        }
+
+        private static void UpdateAppConfig(string newKey, string newValue)
+        {
+            bool isModified = false;
+            foreach (string key in ConfigurationManager.AppSettings)
+            {
+                if (key == newKey)
+                {
+                    isModified = true;
+                }
+            }
+            // Open App.Config of executable
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            // You need to remove the old settings object before you can replace it
+            if (isModified)
+            {
+                config.AppSettings.Settings.Remove(newKey);
+            }
+            // Add an Application Setting.
+            config.AppSettings.Settings.Add(newKey, newValue);
+            // Save the changes in App.config file.
+            config.Save(ConfigurationSaveMode.Modified);
+            // Force a reload of a changed section.
+            ConfigurationManager.RefreshSection("appSettings");
         }
     }
 }

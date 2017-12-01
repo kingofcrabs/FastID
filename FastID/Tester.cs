@@ -2,6 +2,7 @@
 using NationalInstruments.VisaNS;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -17,9 +18,12 @@ namespace FastID
         public delegate void LABUpdate(int plateID, int xLED, int yLED, LAB val, bool isLast);
         public event ProgressChanged onProgressChanged;
         public event LABUpdate onLABUpdate;
+        public delegate void MoveGarbageUpdate(int plateID, int ledID);
+        public event MoveGarbageUpdate onMoveGarbageUpdate;
         UsbSession admesyusbSession = null;
-
+        Dictionary<Point, bool> testResult = new Dictionary<Point, bool>();
         public bool Finished { get; set; }
+        public Point cylinderOffSet;
         bool isAbort = false;
         void Move2RefPoint()
         {
@@ -27,18 +31,53 @@ namespace FastID
             
         }
 
-
+        public Dictionary<Point, bool> TestResult
+        {
+            get
+            {
+                return testResult;
+            }
+        }
+        static Tester tester = null;
+        static public Tester Instance
+        {
+            get
+            {
+                if (tester == null)
+                    tester = new Tester();
+                return tester;
+            }
+        }
+        private Tester()
+        {
+            InitLABReader();
+            cylinderOffSet.X = double.Parse(ConfigurationManager.AppSettings["cylinderOffsetX"]);
+            cylinderOffSet.Y = double.Parse(ConfigurationManager.AppSettings["cylinderOffsetY"]);
+        }
         #region Lab related
+
+        private XYZ ReadXYZ()
+        {
+            double xReal, yReal, zReal;
+            xReal = yReal = zReal = 0;
+            GetXYZ(admesyusbSession, ref xReal, ref yReal, ref zReal);
+            return new XYZ(xReal, yReal, zReal);
+        }
+
         LAB ReadLAB()
         {
             double x, y, z;
             x = y = z = 0;
-            GetXYZ(admesyusbSession, ref x, ref y, ref z);
+            x = double.Parse(ConfigurationManager.AppSettings["x"]);
+            y = double.Parse(ConfigurationManager.AppSettings["y"]);
+            z = double.Parse(ConfigurationManager.AppSettings["z"]);
+
+            //GetXYZ(admesyusbSession, ref x, ref y, ref z);
             double xReal, yReal, zReal;
             xReal = yReal = zReal = 0;
             GetXYZ(admesyusbSession, ref xReal, ref yReal, ref zReal);
             var Lab = XYZToLab(x, y, z, xReal, yReal, zReal);
-            Debug.WriteLine("L: {0} a:{1} b{2}", Lab.l, Lab.a, Lab.b);
+            Debug.WriteLine("L: {0} a:{1} : b{2}", Lab.l, Lab.a, Lab.b);
             return Lab;
         }
 
@@ -71,10 +110,6 @@ namespace FastID
             x = double.Parse(xyzValues[0]);
             y = double.Parse(xyzValues[1]);
             z = double.Parse(xyzValues[2]);
-            x = 100;
-            y = 90;
-            z = 80;
-
         }
 
         private double GetFVal(double v, double e, double k)
@@ -83,43 +118,74 @@ namespace FastID
             return fVal;
         }
         #endregion
-
-        public void Go()
+        internal XYZ GetWhiteBoardXYZ(double x, double y)
         {
             MotorController.Instance.MoveHome();
-            InitLABReader();
+            MotorController.Instance.MoveAbsolute(x, y);
+            return ReadXYZ();
+        }
+
+      
+
+        public LAB GetStandardLab(double x, double y)
+        {
+            MotorController.Instance.MoveHome();
+            MotorController.Instance.MoveAbsolute(x, y);
+            return ReadLAB();
+        }
+        public void Go()
+        {
+            try
+            {
+                GoImp();
+            }
+            catch(Exception ex)
+            {
+                NotifyProgressChanged("Error:" + ex.Message);
+            }
+        }
+       
+        private void GoImp()
+        {
+            IOController.Instance.StartCheck();
+            MotorController.Instance.MoveHome();
             Finished = false;
             isAbort = false;
             var recipe = GlobalVars.Instance.Recipe;
             var layoutInfo = recipe.layoutInfo;
             int plateCnt = layoutInfo.xPlateCount * layoutInfo.yPlateCount;
-            
+
             var plateInfo = layoutInfo.plateInfo;
             int ledCnt = plateInfo.xLEDCount * plateInfo.yLEDCount;
-            for(int plateIndex = 0; plateIndex < plateCnt; plateIndex++)
+            testResult.Clear();
+            for (int plateIndex = 0; plateIndex < plateCnt; plateIndex++)
             {
                 NotifyProgressChanged(string.Format("Plate:{0}", plateIndex + 1));
-                for(int ledIndex = 0; ledIndex < ledCnt; ledIndex++)
+                for (int ledIndex = 0; ledIndex < ledCnt; ledIndex++)
                 {
-                    int plateID = plateIndex+1;
-                    int ledID = ledIndex+1;
-                    Move2Led(plateID,ledID);
+                    int plateID = plateIndex + 1;
+                    int ledID = ledIndex + 1;
+                    Move2Led(plateID, ledID);
                     var lab = ReadLAB();
+                    bool bOk = lab.CalculateDelta() < GlobalVars.Instance.Recipe.labDelta.delta;
+                    testResult.Add(new Point(plateID, ledID), bOk);
                     NotifyLABUpdate(plateID, ledID, lab);
                     Thread.Sleep(100);
-                    if(isAbort)
+                    if (isAbort)
                     {
                         break;
                     }
                 }
-                if(isAbort)
+                if (isAbort)
                 {
                     NotifyProgressChanged("Abort！");
                     break;
                 }
-                
+
             }
             Finished = true;
+            IOController.Instance.StopCheck();
+            NotifyProgressChanged("Finished!");
         }
 
         private void InitLABReader()
@@ -154,7 +220,8 @@ namespace FastID
             }
 
             admesyusbSession.Write(":configure:white:use 1");
-            admesyusbSession.Write(":set:average 2000");
+            int acquireTime = int.Parse(ConfigurationManager.AppSettings["acquireTime"]);
+            admesyusbSession.Write(string.Format(":sens:aver {0}", acquireTime));
           
         }
 
@@ -189,7 +256,7 @@ namespace FastID
         }
 
 
-        public void Move2Led(int plateID, int ledID)
+        public void Move2Led(int plateID, int ledID, bool forCylinder = false)
         {
             //NotifyProgressChanged(string.Format("LED:{0}", ledID));
             var recipe = GlobalVars.Instance.Recipe;
@@ -220,6 +287,11 @@ namespace FastID
 
             double x = platePos.X + ledPosInPlate.X;
             double y = platePos.Y + ledPosInPlate.Y;
+            if (forCylinder)
+            {
+                x += cylinderOffSet.X;
+                y += cylinderOffSet.Y;
+            }
             MotorController.Instance.MoveAbsolute(x, y);
             
         }
@@ -230,8 +302,9 @@ namespace FastID
             var bottomRightPos = ptEnd;
             double w = ptEnd.X - ptStart.X;
             double h = ptEnd.Y - ptStart.Y;
-            double x = ptStart.X + colIndex * w / xCnt;
-            double y = ptStart.Y + rowIndex * h / yCnt;
+            double x = xCnt == 1 ? ptStart.X : ptStart.X + colIndex * w / (xCnt-1);
+
+            double y = yCnt == 1 ? ptStart.Y : ptStart.Y + rowIndex * h / (yCnt-1);
             return new Point(x, y);
         }
 
@@ -282,6 +355,44 @@ namespace FastID
         {
             if(admesyusbSession != null)
                 admesyusbSession.Dispose();
+        }
+
+
+        internal void MoveInvalidSamples2Garbage()
+        {
+            foreach (var pair in Tester.Instance.TestResult)
+            {
+                if (isAbort)
+                {
+                    NotifyProgressChanged("Abort");
+                    break;
+                }
+                    
+                if (!pair.Value)
+                {
+                    int plateID = (int)pair.Key.X;
+                    int ledID = (int)pair.Key.Y;
+                    Tester.Instance.Move2Led(plateID, ledID,true);
+                    IOController.Instance.GetSample();
+                    //simulationViewer.SetCurrentInfo(plateID, ledID);
+                    
+                    if (onMoveGarbageUpdate != null)
+                        onMoveGarbageUpdate(plateID, ledID);
+                    MotorController.Instance.Move2Garbage();
+                    IOController.Instance.ReleaseSample();
+                }
+            }
+        }
+
+        internal int StatisticInvalidLEDs()
+        {
+            int cnt = 0;
+            foreach(bool val in testResult.Values)
+            {
+                if (!val)
+                    cnt++;
+            }
+            return cnt;
         }
     }
 }

@@ -44,6 +44,7 @@
       <HintPath>lib\NationalInstruments.VisaNS.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
@@ -72,6 +73,7 @@
     </Compile>
     <Compile Include="controls\CARDINFO.cs" />
     <Compile Include="controls\CommonData.cs" />
+    <Compile Include="controls\IOController.cs" />
     <Compile Include="controls\MotorController.cs" />
     <Compile Include="controls\MPC08EDLL.cs" />
     <Compile Include="GlobalVars.cs" />
@@ -149,6 +151,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="led.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="images\pick.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

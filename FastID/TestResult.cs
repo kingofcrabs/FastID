@@ -18,10 +18,10 @@ namespace FastID
         {
             PlateNo = pNo;
             LEDNo = lNo;
-            L = lab.l;
-            a = lab.a;
-            b = lab.b;
-            E = lab.CalculateDelta();
+            L = Math.Round(lab.l,2);
+            a = Math.Round(lab.a, 2);
+            b = Math.Round(lab.b, 2);
+            E = Math.Round(lab.CalculateDelta(), 2); 
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FastID.controls;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -18,7 +19,7 @@ namespace FastID
         
         TestViewer testViewer = null;
         SimulationViewer simulationViewer = null;
-        Tester tester = new Tester();
+        
         Thread thread;
 
         ObservableCollection<TestResult> testResults = new ObservableCollection<TestResult>();
@@ -28,9 +29,28 @@ namespace FastID
             InitializeComponent();
             this.Loaded += MainWindow_Loaded;
             this.SizeChanged += MainWindow_SizeChanged;
-            tester.onLABUpdate += tester_onLABUpdate;
-            tester.onProgressChanged += tester_onProgressChanged;
+            Tester.Instance.onLABUpdate += tester_onLABUpdate;
+            Tester.Instance.onProgressChanged += tester_onProgressChanged;
+            Tester.Instance.onMoveGarbageUpdate += Instance_onMoveGarbageUpdate;
+            IOController.Instance.onChannelError += Instance_onChannelError;
             this.Closing += MainWindow_Closing;
+        }
+
+        void Instance_onMoveGarbageUpdate(int plateID, int ledID)
+        {
+            this.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                simulationViewer.SetCurrentInfo(plateID, ledID);
+            }));
+        }
+
+        void Instance_onChannelError(int channelNum)
+        {
+            this.Dispatcher.Invoke(()=>{
+                SetInfo(string.Format("轴{0}报警！", channelNum));
+                Tester.Instance.Abort();
+            });
+            
         }
 
         
@@ -44,7 +64,6 @@ namespace FastID
         void tester_onLABUpdate(int plateID, int xLEDIndex, int yLEDIndex, LAB val, bool isFirst)
         {
             GlobalVars.Instance.plateID_LABInfos[plateID].Add(new PositionInt(xLEDIndex, yLEDIndex), val);
-            
             this.Dispatcher.BeginInvoke(new Action(()=>UpdateUI(plateID,xLEDIndex,yLEDIndex,val ,isFirst)));  
         }
 
@@ -69,6 +88,9 @@ namespace FastID
         void tester_onProgressChanged(string sMessage)
         {
             AddLog(sMessage);
+            if (sMessage.Contains("Abort") || Tester.Instance.Finished || sMessage.Contains("Error"))
+                this.Dispatcher.BeginInvoke((Action)(() => OnFinishAbortOrError(sMessage.Contains("Error")))
+                    );
         }
 
         void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -84,6 +106,18 @@ namespace FastID
 
         void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                MotorController.Instance.Init();
+                IOController.Instance.Init();
+            }
+            catch(Exception ex)
+            {
+                SetInfo(ex.Message, false);
+                IOController.Instance.RedLightOn();
+            }
+            
+            IOController.Instance.YellowLightOn();
             string defaultFile = Helper.GetConfigFolder() + "default.xml";
             lstviewResult.ItemsSource = testResults;
             if(File.Exists(defaultFile))
@@ -92,17 +126,10 @@ namespace FastID
                 txtCurrentConfig.Text = "default";
                 InitialUI();
             }
-            //try
-            //{
-            //    MotorController.Instance.Init();
-            //}
-            //catch(Exception ex)
-            //{
-            //    SetInfo(ex.Message);
-            //}
             
         }
 
+       
         private void SetInfo(string s, bool ok = false)
         {
             Brush brush = ok ? Brushes.Black : Brushes.Red;
@@ -114,11 +141,34 @@ namespace FastID
         void AddLog(string s)
         {
             txtLog.Dispatcher.BeginInvoke((Action)(() => txtLog.Text += s + "\r\n"));
+           
+        }
+
+        private void OnFinishAbortOrError(bool error)
+        {
+            toolbarContainer.IsEnabled = true;
+            int cnt = Tester.Instance.StatisticInvalidLEDs();
+            AddLog(string.Format("不合格的LED数量：{0}", cnt));
+            if(error)
+            {
+                IOController.Instance.RedLightOn();
+            }
+            else
+            {
+                string sFile = Helper.GetOutputFolder() + DateTime.Now.ToString("yyMMddHHmmss") + ".csv";
+                ResultWriter.Save(sFile);
+                IOController.Instance.YellowLightOn();
+            }
         }
 
         private void btnGo_Click(object sender, RoutedEventArgs e)
         {
-            thread = new Thread(tester.Go);
+            IOController.Instance.GreenLightOn();
+            InitialListBox();
+            testResults.Clear();
+            toolbarContainer.IsEnabled = false;
+            simulationViewer.Moving2Garbage = false;
+            thread = new Thread(Tester.Instance.Go);
             thread.Start();
         }
 
@@ -140,11 +190,9 @@ namespace FastID
         {
             InitialListBox();
             simulationViewer = new SimulationViewer(viewerContainer.ActualWidth, viewerContainer.ActualHeight);
-
             testViewer = new TestViewer(viewerContainer.ActualWidth, viewerContainer.ActualHeight);
             viewerContainer.Children.Clear();
             simuationContainer.Children.Clear();
-           
             viewerContainer.Children.Add(testViewer);
             simuationContainer.Children.Add(simulationViewer);
         }
@@ -153,7 +201,6 @@ namespace FastID
         {
             int plateCnt = GlobalVars.Instance.PlateCnt;
             GlobalVars.Instance.plateID_LABInfos.Clear();
-            
             lstPlates.ItemsSource = plateModels;
             plateModels.Clear();
             for (int i = 0; i < plateCnt; i++)
@@ -189,7 +236,7 @@ namespace FastID
 
         private void btnAbort_Click(object sender, RoutedEventArgs e)
         {
-            tester.Abort();
+            Tester.Instance.Abort();
         }
 
         private void CommandHelp_Executed(object sender, ExecutedRoutedEventArgs e)
@@ -202,5 +249,19 @@ namespace FastID
         {
             e.CanExecute = true;
         }
+
+        private void btnPickError_Click(object sender, RoutedEventArgs e)
+        {
+            if(Tester.Instance.TestResult.Count == 0)
+            {
+                SetInfo("没有错误样品！");
+                return;
+            }
+            simulationViewer.Moving2Garbage = true;
+            thread = new Thread(Tester.Instance.MoveInvalidSamples2Garbage);
+            thread.Start();
+        }
+
+      
     }
 }

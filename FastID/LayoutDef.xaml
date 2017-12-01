@@ -87,17 +87,33 @@
                     <Label>Delta:</Label>
                     <TextBox Width="50" Text="10" Name="txtDelta"></TextBox>
                 </StackPanel>
+                <StackPanel>
+                    <Button Name="btnGetLAB" Width="100" Click="btnGetLAB_Click" Content="获取样品LAB值" Height="40" Margin="0,10,0,0" HorizontalAlignment="Left"></Button>
+                </StackPanel>
             </StackPanel>
         </Grid>
         <Grid Grid.Column="3">
             <StackPanel>
-                <Label>参考点定义：</Label>
+                <Label>标准品位置定义：</Label>
                 <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
                     <Label>X:</Label>
                     <TextBox Name="txtRefX" Text="10" Width="50"></TextBox>
                     <Label>Y:</Label>
                     <TextBox Name="txtRefY" Text="10" Width="50"></TextBox>
+                    
                 </StackPanel>
+                <Label>白板位置定义：</Label>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                    <Label>X:</Label>
+                    <TextBox Name="txtWhiteBoardX" Text="10" Width="50"></TextBox>
+                    <Label>Y:</Label>
+                    <TextBox Name="txtWhiteBoardY" Text="10" Width="50"></TextBox>
+
+                </StackPanel>
+                <StackPanel>
+                    <Button Name="btnGetWhiteXYZ" Width="100" Click="btnGetWhiteBoardXYZ_Click" Content="获取白板XYZ值" Height="40" Margin="0,10,0,0" HorizontalAlignment="Left"></Button>
+                </StackPanel>
+
             </StackPanel>
         </Grid>
         <!--<Grid Grid.Row="1" Grid.ColumnSpan="2">

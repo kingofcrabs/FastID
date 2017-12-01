@@ -13,7 +13,7 @@
             <RowDefinition Height="100"/>
         </Grid.RowDefinitions>
        
-        <StackPanel Orientation="Horizontal" Grid.Row="1">
+        <StackPanel Orientation="Horizontal" Name="toolbarContainer" Grid.Row="1">
             <Button Name="btnConfig" Click="btnConfig_Click"  ToolTip="配置.">
                 <StackPanel Orientation="Vertical" >
                     <Image Source="/Images/config.png"  Height="55"/>
@@ -31,6 +31,12 @@
                 <StackPanel Orientation="Vertical" >
                     <Image Source="/Images/go.jpg"  Height="55"/>
                     <TextBlock FontSize="16" TextAlignment="Center" Margin="3,0,0,0">运行</TextBlock>
+                </StackPanel>
+            </Button>
+            <Button Name="btnPick" Click="btnPickError_Click"  ToolTip="挑错.">
+                <StackPanel Orientation="Vertical" >
+                    <Image Source="/Images/pick.png"  Height="55"/>
+                    <TextBlock FontSize="16" TextAlignment="Center" Margin="3,0,0,0">挑错</TextBlock>
                 </StackPanel>
             </Button>
             <StackPanel>
@@ -94,7 +100,7 @@
                                     <GridViewColumn Header="L" Width="50" DisplayMemberBinding="{Binding Path=L}"></GridViewColumn>
                                     <GridViewColumn Header="a" Width="50" DisplayMemberBinding="{Binding Path=a}"></GridViewColumn>
                                     <GridViewColumn Header="b" Width="50" DisplayMemberBinding="{Binding Path=b}"></GridViewColumn>
-                                    <GridViewColumn Header="e" Width="120" DisplayMemberBinding="{Binding Path=e}"></GridViewColumn>
+                                    <GridViewColumn Header="e" Width="120" DisplayMemberBinding="{Binding Path=E}"></GridViewColumn>
                                 </GridView>
                             </ListView.View>
                         </ListView>

@@ -12,11 +12,14 @@ namespace FastID
     {
         public int CurrentLEDID { get; set; }
         public int CurrentPlateID { get; set; }
+
+        public bool Moving2Garbage { get; set; }
         Size sz;
         public SimulationViewer(double w, double h)
         {
             sz.Width = w;
             sz.Height = h;
+            Moving2Garbage = false;
         }
 
         internal void Resize(Size newSize)
@@ -86,10 +89,15 @@ namespace FastID
             double mapY = MapY(y);
             double mapW = MapX(sz.Width);
             double mapH = MapY(sz.Height);
-            double startX = mapX - mapW / 2;
-            double startY = mapY - mapH / 2;
+            double startX = mapX + mapW / 2;
+            double startY = mapY + mapH / 2;
             Brush brush = isCurrent ? Brushes.Red : Brushes.Black;
             drawingContext.DrawRectangle(brush, new Pen(brush, 1), new Rect(new Point(mapX, mapY), new Size(mapW, mapH)));
+            if(Moving2Garbage && isCurrent)
+            {
+                Brush blueBrush = Brushes.Blue;
+                drawingContext.DrawEllipse(blueBrush, new Pen(blueBrush, 1), new Point(mapX, mapY), mapW / 2, mapW / 2);
+            }
         }
 
         private double MapX(double v)

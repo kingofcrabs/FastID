@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -16,14 +17,17 @@ namespace FastID.controls
         public SortedDictionary<int, int> Axis_Dir;
         public int[] Axis;
         public int[] Dir;
-        
+        int garbageX = int.Parse(ConfigurationManager.AppSettings["garbageX"]);
+        int garbageY = int.Parse(ConfigurationManager.AppSettings["garbageY"]);
         const int  stepsPerMM = 100;
 
         public double m_dbSpeedLow = stepsPerMM * 10; //10mm
-        public double m_dbSpeedHigh = stepsPerMM * 100; // 100mm
-        public double m_dbSpeedAccel = stepsPerMM * 10; // 5s accelerate
+        public double m_dbSpeedHigh = stepsPerMM * 1000; // 100mm
+        public double m_dbSpeedAccel = stepsPerMM * 1000; // 5s accelerate
         private Point lastPt = new Point(0,0);
         bool fastMove = true;
+        bool initialed = false;
+        bool moveHome = false;
         static public MotorController Instance
         {
             get
@@ -43,6 +47,12 @@ namespace FastID.controls
 
         public void Init()
         {
+            if (initialed)
+                return;
+            
+            int speed = int.Parse(ConfigurationManager.AppSettings["speed"]);
+            m_dbSpeedHigh = speed * stepsPerMM;
+            m_dbSpeedAccel = speed * stepsPerMM;
             CommonData.g_iTotalAxeNum = MPC08EDLL.auto_set();
             if (CommonData.g_iTotalAxeNum <= 0)
             {
@@ -71,10 +81,19 @@ namespace FastID.controls
                     MPC08EDLL.set_conspeed(i + 1, m_dbSpeedLow);
                 }
             }
+            initialed = true;
+        }
+
+        public void Move2Garbage()
+        {
+            MoveAbsolute(garbageX, garbageY);
         }
 
         public void MoveHome()
         {
+            if (moveHome)
+                return;
+            
             MPC08EDLL.con_hmove2(1, -1, 2, -1);
             int i = 300;  //30 seconds
             int ch1, ch2;
@@ -89,9 +108,12 @@ namespace FastID.controls
                 i--;
             }
             if (ch1 != -1 || ch2 != -1)
+            {
                 throw new Exception("无法回零！");
+            }
             
             lastPt = new Point(0, 0);
+            moveHome = true;
         }
 
 

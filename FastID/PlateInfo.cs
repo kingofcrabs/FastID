@@ -108,6 +108,20 @@ namespace FastID
     }
 
 
+    public struct XYZ
+    {
+        public double x;
+        public double y;
+        public double z;
+        public XYZ(double xx, double yy, double zz)
+        {
+            this.x = xx;
+            this.y = yy;
+            this.z = zz;
+
+        }
+    }
+
     public struct LAB
     {
         public double l;
