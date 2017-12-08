@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
+using System.Threading;
 using System.Timers;
 
 namespace FastID.controls
@@ -14,11 +14,15 @@ namespace FastID.controls
         public event DelChannelError onChannelError;
         private System.Timers.Timer timer = new System.Timers.Timer();
         //out
-        readonly int airCylinderSource = 6;
-        readonly int airCylinderSwitchValve = 10;
+        
+        
         readonly int airCylinderVaccumOn = 4;
-        readonly int airCylinderVaccumOff = 5;
-
+        readonly int airCylinderVaccumDestroy = 5;
+        readonly int airCylinderSource = 6;
+        readonly int plateformValve = 7;
+        readonly int plateformAirSource = 9;
+        readonly int airCylinderSwitchValve = 10;
+        readonly int mainAirSource = 11;
         //in
         readonly int airCylinderDownLimit = 5;
         readonly int airCylinderUpLimit = 6;
@@ -30,20 +34,34 @@ namespace FastID.controls
             timer.Start();
         }
 
+        public void CloseAll()
+        {
+            MPC08EDLL.outport_bit(1, airCylinderVaccumOn, 1);
+            MPC08EDLL.outport_bit(1, airCylinderVaccumDestroy, 1);
+            MPC08EDLL.outport_bit(1, airCylinderSource, 1);
+            MPC08EDLL.outport_bit(1, plateformValve, 1);
+            MPC08EDLL.outport_bit(1, plateformAirSource, 1);
+            MPC08EDLL.outport_bit(1, airCylinderSwitchValve, 1); //air cylinder up
+            MPC08EDLL.outport_bit(1, mainAirSource, 1);
+            
+        }
+
         internal void StopCheck()
         {
             timer.Stop();
         }
 
+
+
         void timer_Elapsed(object sender, ElapsedEventArgs e)
         {
             int channel1 = MPC08EDLL.checkin_bit(1, 1);
             int channel2 = MPC08EDLL.checkin_bit(1, 2);
-            if(channel1 == -1 || channel2 == -1)
+            if(channel1 == 0 || channel2 == 0)
             {
                 if(onChannelError != null)
                 {
-                    if (channel1 == -1)
+                    if (channel1 == 0)
                         onChannelError(1);
                     else
                         onChannelError(2);
@@ -114,7 +132,7 @@ namespace FastID.controls
             }
             //vaccum off
             res = MPC08EDLL.outport_bit(1, airCylinderVaccumOn, 1);
-            res = MPC08EDLL.outport_bit(1, airCylinderVaccumOff, 0);
+            res = MPC08EDLL.outport_bit(1, airCylinderVaccumDestroy, 0);
             System.Threading.Thread.Sleep(200);
 
             res = MPC08EDLL.outport_bit(1, airCylinderSwitchValve, 1); //air cylinder up
@@ -128,10 +146,13 @@ namespace FastID.controls
                 }
                 System.Threading.Thread.Sleep(150);
             }
+            res = MPC08EDLL.outport_bit(1, airCylinderVaccumDestroy, 1);
             if (!bok)
             {
                 throw new Exception("气缸抬起失败！");
             }
+            
+            
         }
 
         public void GetSample()
@@ -156,7 +177,7 @@ namespace FastID.controls
                 throw new Exception("气缸无法下降！");
             }
             //vaccum on
-            res = MPC08EDLL.outport_bit(1, airCylinderVaccumOff, 1);
+            res = MPC08EDLL.outport_bit(1, airCylinderVaccumDestroy, 1);
             res = MPC08EDLL.outport_bit(1, airCylinderVaccumOn, 0);
             bok = false;
             System.Threading.Thread.Sleep(200);
@@ -193,14 +214,14 @@ namespace FastID.controls
         internal void Init()
         {
             //0 is open, 1 is close, tricky
-            int plateformValve = 7;
-            int plateformAirSource = 9;
-            int mainAirSource = 11;
+            MPC08EDLL.outport_bit(1, airCylinderSource, 0);     // open air cylinder source
+            Thread.Sleep(100);
             MPC08EDLL.outport_bit(1, airCylinderSwitchValve, 1); //air cylinder up
-            MPC08EDLL.outport_bit(1, airCylinderSource, 0);     // close air cylinder source
             MPC08EDLL.outport_bit(1, plateformAirSource, 0);
             MPC08EDLL.outport_bit(1, plateformValve, 0);
             MPC08EDLL.outport_bit(1, mainAirSource, 0);
+            
+
         }
     }
 }

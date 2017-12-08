@@ -19,11 +19,11 @@ namespace FastID.controls
         public int[] Dir;
         int garbageX = int.Parse(ConfigurationManager.AppSettings["garbageX"]);
         int garbageY = int.Parse(ConfigurationManager.AppSettings["garbageY"]);
-        const int  stepsPerMM = 100;
+        readonly int  stepsPerMM =  int.Parse(ConfigurationManager.AppSettings["StepsPerMM"]);
 
-        public double m_dbSpeedLow = stepsPerMM * 10; //10mm
-        public double m_dbSpeedHigh = stepsPerMM * 1000; // 100mm
-        public double m_dbSpeedAccel = stepsPerMM * 1000; // 5s accelerate
+        public double m_dbSpeedLow;// = stepsPerMM * 10; //10mm
+        public double m_dbSpeedHigh;// = stepsPerMM * 1000; // 100mm
+        public double m_dbSpeedAccel;// = stepsPerMM * 1000; // 5s accelerate
         private Point lastPt = new Point(0,0);
         bool fastMove = true;
         bool initialed = false;
@@ -43,6 +43,7 @@ namespace FastID.controls
         private MotorController()
         {
             Init();
+           
         }
 
         public void Init()
@@ -51,8 +52,9 @@ namespace FastID.controls
                 return;
             
             int speed = int.Parse(ConfigurationManager.AppSettings["speed"]);
-            m_dbSpeedHigh = speed * stepsPerMM;
-            m_dbSpeedAccel = speed * stepsPerMM;
+            m_dbSpeedLow = stepsPerMM * 30; 
+            m_dbSpeedHigh = stepsPerMM * 300; 
+            m_dbSpeedAccel = stepsPerMM * 600; 
             CommonData.g_iTotalAxeNum = MPC08EDLL.auto_set();
             if (CommonData.g_iTotalAxeNum <= 0)
             {
@@ -74,6 +76,7 @@ namespace FastID.controls
                 {
                     MPC08EDLL.set_profile(i + 1, m_dbSpeedLow, m_dbSpeedHigh, m_dbSpeedAccel);
                     MPC08EDLL.set_maxspeed(i + 1, m_dbSpeedHigh);
+                    MPC08EDLL.set_conspeed(i + 1, m_dbSpeedLow);
                 }
                 else
                 {
@@ -93,8 +96,8 @@ namespace FastID.controls
         {
             if (moveHome)
                 return;
-            
-            MPC08EDLL.con_hmove2(1, -1, 2, -1);
+            MPC08EDLL.con_pmove(1, -stepsPerMM * 800);
+            MPC08EDLL.con_pmove(2, -stepsPerMM * 300);
             int i = 300;  //30 seconds
             int ch1, ch2;
             ch1 = ch2 = 0;
