@@ -29,11 +29,19 @@ namespace FastID
             InitializeComponent();
             this.Loaded += MainWindow_Loaded;
             this.SizeChanged += MainWindow_SizeChanged;
-            Tester.Instance.onLABUpdate += tester_onLABUpdate;
-            Tester.Instance.onProgressChanged += tester_onProgressChanged;
-            Tester.Instance.onMoveGarbageUpdate += Instance_onMoveGarbageUpdate;
-            IOController.Instance.onChannelError += Instance_onChannelError;
-            this.Closing += MainWindow_Closing;
+            try
+            {
+                Tester.Instance.onLABUpdate += tester_onLABUpdate;
+                Tester.Instance.onProgressChanged += tester_onProgressChanged;
+                Tester.Instance.onMoveGarbageUpdate += Instance_onMoveGarbageUpdate;
+                IOController.Instance.onChannelError += Instance_onChannelError;
+                this.Closing += MainWindow_Closing;
+            }
+            catch(Exception ex)
+            {
+                SetInfo(ex.Message);
+            }
+            
         }
 
         void Instance_onMoveGarbageUpdate(int plateID, int ledID)
@@ -48,12 +56,12 @@ namespace FastID
         {
             this.Dispatcher.Invoke(()=>{
                 SetInfo(string.Format("轴{0}报警！", channelNum));
+                IOController.Instance.RedLightOn();
+                Tester.Instance.HasError = true;
                 Tester.Instance.Abort();
+                
             });
-            
         }
-
-        
 
         void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
@@ -88,8 +96,8 @@ namespace FastID
         void tester_onProgressChanged(string sMessage)
         {
             AddLog(sMessage);
-            if (sMessage.Contains("Abort") || Tester.Instance.Finished || sMessage.Contains("Error"))
-                this.Dispatcher.BeginInvoke((Action)(() => OnFinishAbortOrError(sMessage.Contains("Error")))
+            if (sMessage.Contains("Abort") || Tester.Instance.Finished )
+                this.Dispatcher.BeginInvoke((Action)(() => OnFinishAbortOrError(Tester.Instance.HasError))
                     );
         }
 
@@ -110,6 +118,8 @@ namespace FastID
             {
                 MotorController.Instance.Init();
                 IOController.Instance.Init();
+                Thread.Sleep(300);
+                IOController.Instance.CloseAll();
             }
             catch(Exception ex)
             {
@@ -148,7 +158,10 @@ namespace FastID
         {
             toolbarContainer.IsEnabled = true;
             int cnt = Tester.Instance.StatisticInvalidLEDs();
-            AddLog(string.Format("不合格的LED数量：{0}", cnt));
+            if (!simulationViewer.Moving2Garbage)
+                AddLog(string.Format("不合格的LED数量：{0}", cnt));
+
+            IOController.Instance.CloseAll();
             if(error)
             {
                 IOController.Instance.RedLightOn();
@@ -257,6 +270,8 @@ namespace FastID
                 SetInfo("没有错误样品！");
                 return;
             }
+            IOController.Instance.Init();
+            IOController.Instance.GreenLightOn();
             simulationViewer.Moving2Garbage = true;
             thread = new Thread(Tester.Instance.MoveInvalidSamples2Garbage);
             thread.Start();

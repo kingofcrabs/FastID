@@ -25,6 +25,7 @@ namespace FastID
         public bool Finished { get; set; }
         public Point cylinderOffSet;
         bool isAbort = false;
+        bool errorHappened = true;
         void Move2RefPoint()
         {
             NotifyProgressChanged("Move to reference point.");
@@ -141,12 +142,25 @@ namespace FastID
             }
             catch(Exception ex)
             {
+                errorHappened = true;
                 NotifyProgressChanged("Error:" + ex.Message);
             }
         }
-       
+
+        public bool HasError
+        {
+            get
+            {
+                return errorHappened;
+            }
+            set
+            {
+                errorHappened = value;
+            }
+        }
         private void GoImp()
         {
+            errorHappened = false;
             IOController.Instance.StartCheck();
             MotorController.Instance.MoveHome();
             Finished = false;
@@ -178,12 +192,14 @@ namespace FastID
                 }
                 if (isAbort)
                 {
-                    NotifyProgressChanged("Abort！");
+                    NotifyProgressChanged("Abort");
+                    MotorController.Instance.Move2Garbage();
                     break;
                 }
 
             }
             Finished = true;
+            MotorController.Instance.Move2Garbage();
             IOController.Instance.StopCheck();
             NotifyProgressChanged("Finished!");
         }
@@ -380,8 +396,10 @@ namespace FastID
                         onMoveGarbageUpdate(plateID, ledID);
                     MotorController.Instance.Move2Garbage();
                     IOController.Instance.ReleaseSample();
+                    
                 }
             }
+            NotifyProgressChanged("Finish");
         }
 
         internal int StatisticInvalidLEDs()
